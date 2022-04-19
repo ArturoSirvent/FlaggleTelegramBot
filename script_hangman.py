@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[13]:
 
 
 #librerias 
@@ -12,9 +12,10 @@ import matplotlib.pyplot as plt
 import unidecode
 import re 
 import telebot 
+import os 
 
 
-# In[9]:
+# In[14]:
 
 
 HANGMANPICS = ['''
@@ -69,7 +70,7 @@ HANGMANPICS = ['''
 =========''']
 
 
-# In[10]:
+# In[15]:
 
 
 #el diccionario de palabras lo vamos a sacar de 
@@ -80,14 +81,16 @@ r=requests.get(url)
 soup=BeautifulSoup(r.content,parser="html.parser")
 
 
-# In[11]:
+# In[16]:
 
 
 lis=soup.find_all("li",class_="")
 palabras=[]
+max_letras=7
+min_letras=5
 for i in lis:
     try:
-        if (len(i.a.text)>=6 and len(i.a.text.split())==1):
+        if (len(i.a.text)>=min_letras and len(i.a.text)<=max_letras and len(i.a.text.split())==1):
             palabras.append(i.a.text)
         else:
             pass
@@ -99,7 +102,7 @@ palabras=[unidecode.unidecode(i).lower() for i in palabras]
 palabras
 
 
-# In[12]:
+# In[17]:
 
 
 #luego hacemos las funciones necesarias para que no completen los huevos de letras 
@@ -111,7 +114,7 @@ def complete_letters(letters,word):
     return "".join(final)
 
 
-# In[13]:
+# In[35]:
 
 
 #el bot tiene que tener diferentes stages, y debe ir evolucionando conforme se juega
@@ -134,7 +137,7 @@ jugando=False
 letras=[]
 hang_count=0
 intentos_adiv=0
-intentos_adiv_max=2
+intentos_adiv_max=3
 
 
 #primero debemos empezar
@@ -146,16 +149,17 @@ def empezar(message):
     global letras
     global hang_count
     global intentos_adiv
-    
+    global intentos_adiv_max
+
     if jugando == False:
         jugando=True
-        bot.send_message(message.chat.id, "Este es el juego del ahorcado.\n Para pedir letra simplemente escribela en el chat. \n Y para adivinar la palabra pon: 'Respuesta: {la palabra}'\n Y tienes 2 intentos.")
+        bot.send_message(message.chat.id, "Este es el juego del ahorcado.\nPara pedir letra simplemente escribela en el chat. \nY para adivinar la palabra pon: 'Respuesta: {la palabra}'")
+        bot.send_message(message.chat.id,f"Y tienes {intentos_adiv_max} intentos.")
     elif jugando == True:
         bot.send_message(message.chat.id, "Reiniciamos el juego")
     letras=[]
     hang_count=0
     intentos_adiv=0
-    intentos_adiv_max=2
     palabra=palabras[np.random.randint(0,len(palabras))]
     print(letras,palabra,complete_letters(letras,palabra))
     bot.send_message(message.chat.id, f"La palabra a adivinar es: \n {complete_letters(letras,palabra)}")
@@ -218,17 +222,23 @@ def enter_word(message):
     #si metemos Respuesta: palabra
     #entonces comprobamos
     regex_aux=re.findall("^(.+):",x)
-    if regex_aux:
-        start_aux=regex_aux[0].lower().strip()
-        intento_aux=re.findall(":(.+)$",x)[0]
-        if intento_aux:
-            palabra_intento=intento_aux.lower().strip()
-        else:
+    if jugando and regex_aux:
+        start_aux=unidecode.unidecode((regex_aux[0].lower().strip()))
+        try:
+            intento_aux=re.findall(":(.+)$",x)[0]
+            palabra_intento=unidecode.unidecode(intento_aux.lower().strip())
+        except:
             palabra_intento=None
-        if jugando and len(x.strip())!=1 and start_aux=="respuesta" and palabra_intento is not None:
+        if jugando and len(x.strip())!=1 and (start_aux=="respuesta" or start_aux=="solucion") and palabra_intento is not None:
             return True
+        elif jugando and len(x.strip())!=1 and (start_aux!="respuesta" and start_aux!="solucion"):
+            bot.send_message(message.chat.id, "kè¿?!")
+            return False    
         else:
             return False
+    elif jugando and len(x.strip())!=1 :
+        bot.send_message(message.chat.id, "kè¿?!")
+        return False
     else:
         return False
     
@@ -237,6 +247,7 @@ def word(message):
     x=message.text
     global palabra
     global intentos_adiv
+    global jugando
     #comprobamos si la palabra es
     palabra_intento=re.findall(":(.+)$",x)[0].lower().strip()
     if palabra_intento == palabra:
@@ -248,12 +259,19 @@ def word(message):
         #si no es, sumamos uno a lo de los intentos y le avisamo que no es.
         intentos_adiv+=1
         bot.send_message(message.chat.id, f"NO! ERROR, MAL!!, {palabra_intento} NO ES LA PALABRA.")
+        if (intentos_adiv_max-intentos_adiv)>1:
+            plural1="n"
+            plural2="s"
+        else:
+            plural1=""
+            plural2=""
 
+        bot.send_message(message.chat.id, f"Te queda{plural1} {intentos_adiv_max-intentos_adiv} intento{plural2} para adivinar la palabra.")
         #si no la a avinado y ya estamos en el máximo le avisamo y volvemos a comentar
         if intentos_adiv>=intentos_adiv_max:
             #terminamos
             jugando=False
-            bot.send_message(message.chat.id, "Has agotado los intentos para adivinar la palabra, se reiniciará el juego.")
+            bot.send_message(message.chat.id, "Has agotado los intentos para adivinar la palabra, pon '/start' para reiniciar el juego.")
 
         
 
@@ -263,7 +281,7 @@ def word(message):
 
 
 
-# In[14]:
+# In[37]:
 
 
 bot.polling()
