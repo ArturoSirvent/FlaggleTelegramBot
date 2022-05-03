@@ -98,8 +98,10 @@ for i in lis:
         pass
 #quito las ultimas 4 porque parecen un eror o algo
 palabras=palabras[:-4]
+palabras=[ i for i in palabras if "ñ" not in i]
 palabras=[unidecode.unidecode(i).lower() for i in palabras]
-palabras
+
+
 
 
 # In[17]:
@@ -175,7 +177,11 @@ def enter_oneletter(message):
     global jugando
     if jugando and len(x.strip())==1 and x.strip().isalpha():
         return True
+    elif jugando and len(x.strip())==1 and not x.strip().isalpha():
+        bot.send_message(message.chat.id, "kè¿?!")
+        return False 
     else:
+    	#bot.send_message(message.chat.id, "kè¿?!")
         return False
 
 @bot.message_handler(func=enter_oneletter)
