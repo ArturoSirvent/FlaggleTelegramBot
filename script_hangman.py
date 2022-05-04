@@ -121,7 +121,7 @@ def complete_letters(letters,word):
 
 #el bot tiene que tener diferentes stages, y debe ir evolucionando conforme se juega
 #y además saber cuando se termina 
-KEY="5125128580:AAEfu8BO-mJvYYOI2hX8C8wo-EDF1AhqioA"
+KEY=
 bot = telebot.TeleBot(KEY, parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
 
 #vamos a tener muchas callbacks pero solo se activaran cuando se le indique
