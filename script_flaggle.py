@@ -71,7 +71,7 @@ print(flags_dirs_complete[pais_random],final_list)
 
 
 #se define el bot
-KEY="5125128580:AAEfu8BO-mJvYYOI2hX8C8wo-EDF1AhqioA"
+KEY=
 bot = telebot.TeleBot(KEY, parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
 
 
